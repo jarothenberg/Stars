@@ -23,7 +23,7 @@ public class Stars extends JPanel {
 	private static final long serialVersionUID = 1L; // WARNING: manually adjusting size of JPanel results in every star
 														// changing color randomly
 	private static int scale = 4; // changes scale of the star's size
-	private static int sidesNum = 20; // number of the sides of the polygon the star is inscribed in.
+	private static int sidesNum = 9; // number of the sides of the polygon the star is inscribed in.
 										// WARNING: entering a large number (over 1000) may result in the program
 										// lagging or failing due to the computer running low on memory.
 										// Optimal number range: [5, 6) U (6, 100] 5 to 100 inclusive, not including 6
