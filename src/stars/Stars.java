@@ -1,137 +1,218 @@
 package stars;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Polygon;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Random;
-import java.util.Scanner;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JSlider;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 public class Stars extends JPanel {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L; // WARNING: manually adjusting size of JPanel results in every star
-														// changing color randomly
-	private static int scale = 4; // changes scale of the star's size
-	private static int sidesNum = 9; // number of the sides of the polygon the star is inscribed in.
-										// WARNING: entering a large number (over 1000) may result in the program
-										// lagging or failing due to the computer running low on memory.
-										// Optimal number range: [5, 6) U (6, 100] 5 to 100 inclusive, not including 6
+    private static final long serialVersionUID = 1L;
+    private int width = 800;
+    private int height = 600;
+    private int geoScale = 5;
+    private int sidesNum = 15;
+    private boolean drawAllStars = false;
+    private int slideNum;
+    private JSlider slide;
+    private JRadioButton button;
+    private JTextField sidesField;
+    private JButton updateButton;
+    private double scale;
 
-	int slideNum;
-	
-	public void paintComponent(Graphics g) {
-		super.paintComponent(g);
-		Polygon p = new Polygon();
-		int[] x = new int[sidesNum];
-		int[] y = new int[sidesNum];
-		for (int i = 0; i < sidesNum; i++) {
-			x[i] = (int) (50 * scale + 50 * Math.cos(i * 2 * Math.PI / sidesNum) * scale);
-			y[i] = (int) (50 * scale + 50 * Math.sin(i * 2 * Math.PI / sidesNum) * scale);
-		}
-		for (int i = 0; i < sidesNum; i++) {
-			p.addPoint(x[i], y[i]);
-		}
-		int count = 0;
-		for (int i = 2; i < sidesNum; i++) {
-			if (sidesNum % i != 0 && i * 2 < sidesNum) {
-				count++;
-			}
-		}
-		int[] possible = new int[count];
-		count = 0;
-		for (int i = 2; i < sidesNum; i++) {
-			if (sidesNum % i != 0 && i * 2 < sidesNum) {
-				possible[count] = i;
-				count++;
-			}
-		}
-		JSlider slide = new JSlider();
-		if (JFrame.getFrames().length == 1) {
-			String title = "STARS";
-			int width = 100;
-			int height = 100;
-			JFrame frame = new JFrame();
-			Object[] rtrn = new Object[2];
-			frame.setTitle(title);
-			frame.setSize(width * scale, height * scale + 100);
-			frame.addWindowListener(new WindowAdapter() {
-				public void windowClosing(WindowEvent e) {
-					System.exit(0);
-				}
-			});
-			slide.setLocation(height * scale / 10, height * scale);
-			slide.setSize(400, 100);
+    public Stars() {
+        String title = "STARS";
+        JFrame frame = new JFrame();
+        frame.setTitle(title);
+        frame.setSize(width, height); // Initial size
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                System.exit(0);
+            }
+        });
 
-			count = 0;
-			for (int i = 2; i < sidesNum; i++) {
-				if (sidesNum % i != 0 && i * 2 < sidesNum) {
-					count++;
-				}
-			}
+        createSlider();
+        createButton();
+        createSidesField();
+        createUpdateButton();
 
-			slide.setMaximum(count);
-			slide.setMinimum(1);
-			slide.setValue(0);
-			
-			slide.addChangeListener(new ChangeListener(){
-			          public void stateChanged(ChangeEvent e) {
-			        	  rtrn[1] = slide.getValue();
-			        	  slideNum = slide.getValue();//not updating outside of here
-			        	  System.out.println("1: " + slideNum);
-			          }
-			    });
-			frame.add(slide);
-			Container contentPane = frame.getContentPane();
-			contentPane.add(new Stars());
-			frame.setVisible(true);
-			rtrn[0] = frame;
-		}
-		System.out.println("2: " + this.slideNum);
-		for (int i = 0; i < possible.length; i++) {
-			Random rand = new Random();
-			float red = rand.nextFloat();
-			float green = rand.nextFloat();
-			float blue = rand.nextFloat();
-			Color rnd = new Color(red, green, blue);
-			int numSkip = possible[slideNum]; //change i to whatever star is being selected
-			//int numSkip = possible[i];
-			for (int j = 0; j < sidesNum; j += numSkip) {
-				
-				g.setColor(rnd);
-				if (j + numSkip > sidesNum) {
-					g.drawLine(x[j], y[j], x[j + numSkip - sidesNum], y[j + numSkip - sidesNum]);
-					j = j + numSkip - sidesNum;
-				} else if (j + numSkip == sidesNum) {
-					g.drawLine(x[j], y[j], x[0], y[0]);
-					break;
-				}
-				g.drawLine(x[j], y[j], x[j + numSkip], y[j + numSkip]);
-			}
-		}
-		g.setColor(Color.BLACK);
-		g.drawPolygon(p);
-	}
+        // Create a panel for the slider, button, and sidesField with FlowLayout
+        JPanel controlsPanel = new JPanel();
+        controlsPanel.setLayout(new FlowLayout());
+        controlsPanel.add(slide);
+        controlsPanel.add(button);
+        controlsPanel.add(sidesField);
+        controlsPanel.add(updateButton);
 
-	public static void createFrame(String title, int width, int height) {
-		JFrame frame = new JFrame();
-		Container contentPane = frame.getContentPane();
-		contentPane.add(new Stars());
-		frame.setVisible(true);
-		frame.setSize(0,0);
-	}
+        frame.setLayout(new BorderLayout());
+        frame.add(this, BorderLayout.CENTER);
+        frame.add(controlsPanel, BorderLayout.SOUTH);
 
-	public static void main(String[] args) {
-		createFrame("STARS", 100, 100);
-	}
+        frame.addComponentListener(new ComponentAdapter() {
+            public void componentResized(ComponentEvent e) {
+                updateGeometry();
+            }
+        });
+
+        frame.setVisible(true);
+        updateGeometry(); // Call updateGeometry to set the initial scale
+    }
+
+    private void createUpdateButton() {
+        updateButton = new JButton("Update Sides");
+        updateButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateSides();
+            }
+        });
+    }
+
+    private void createButton() {
+        button = new JRadioButton("Draw All Stars", drawAllStars);
+        button.setRolloverEnabled(false); // Disable rollover effect
+        button.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                drawAllStars = button.isSelected();
+                slide.setEnabled(!drawAllStars); // Enable/disable slider based on radio button selection
+                repaint();
+            }
+        });
+    }
+
+    private void createSlider() {
+        int count = 0;
+        for (int i = 2; i < sidesNum; i++) {
+            if (sidesNum % i != 0 && i * 2 < sidesNum) {
+                count++;
+            }
+        }
+
+        slide = new JSlider();
+        int maxSkipIndex = count - 1; // Maximum index for possible skips
+        slide.setMaximum(maxSkipIndex);
+        slide.setMinimum(0);
+        slide.setValue(0);
+
+        slide.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                slideNum = slide.getValue();
+                repaint();
+            }
+        });
+    }
+
+    private void createSidesField() {
+        sidesField = new JTextField(5);
+        sidesField.setText(Integer.toString(sidesNum));
+    }
+
+    private void updateSides() {
+        try {
+            int newSidesNum = Integer.parseInt(sidesField.getText());
+            if (newSidesNum > 0) {
+                sidesNum = newSidesNum;
+                slide.setMaximum(calculateMaxSkipIndex());
+                slide.setValue(0);
+                repaint();
+            }
+        } catch (NumberFormatException ex) {
+            // Handle invalid input
+        }
+    }
+
+    private int calculateMaxSkipIndex() {
+        int count = 0;
+        for (int i = 2; i < sidesNum; i++) {
+            if (sidesNum % i != 0 && i * 2 < sidesNum) {
+                count++;
+            }
+        }
+        return count - 1;
+    }
+
+    private void updateGeometry() {
+        // Recalculate the scale factor based on the new dimensions
+        scale = Math.min((double) getWidth() / width, (double) getHeight() / height)*geoScale;
+        repaint();
+    }
+
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        Polygon p = new Polygon();
+        int[] x = new int[sidesNum];
+        int[] y = new int[sidesNum];
+
+        for (int i = 0; i < sidesNum; i++) {
+            x[i] = (int) (getWidth() / 2 + 50 * scale * Math.cos(i * 2 * Math.PI / sidesNum));
+            y[i] = (int) (getHeight() / 2 + 50 * scale * Math.sin(i * 2 * Math.PI / sidesNum));
+            p.addPoint(x[i], y[i]);
+        }
+
+        int count = 0;
+        for (int i = 2; i < sidesNum; i++) {
+            if (sidesNum % i != 0 && i * 2 < sidesNum) {
+                count++;
+            }
+        }
+
+        int[] possible = new int[count];
+        count = 0;
+        for (int i = 2; i < sidesNum; i++) {
+            if (sidesNum % i != 0 && i * 2 < sidesNum) {
+                possible[count] = i;
+                count++;
+            }
+        }
+
+        if (slideNum >= 0 && slideNum < possible.length) {
+            if (drawAllStars == true) {
+                for (int k = 0; k < possible.length; k++) {
+                    g.setColor(getRandomColor());
+                    int numSkip = possible[k];
+                    for (int i = 0; i < sidesNum; i++) {
+                        int j = (i + numSkip) % sidesNum;
+                        g.drawLine(x[i], y[i], x[j], y[j]);
+                    }
+                }
+            } else {
+                g.setColor(getRandomColor());
+                int numSkip = possible[slideNum];
+                for (int i = 0; i < sidesNum; i++) {
+                    int j = (i + numSkip) % sidesNum;
+                    g.drawLine(x[i], y[i], x[j], y[j]);
+                }
+            }
+        }
+
+        g.setColor(Color.BLACK);
+        g.drawPolygon(p);
+    }
+
+    private Color getRandomColor() {
+        return new Color((float) Math.random(), (float) Math.random(), (float) Math.random());
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            new Stars();
+        });
+    }
 }
